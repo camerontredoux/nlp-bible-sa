@@ -1,5 +1,5 @@
 ## 1. Copy the random verses
- Make a copy of each csv file in `data/random_verses` and put it in a folder named with your name like
+ Make a copy of each csv file in `data/random_chunks` and put it in a folder named with your name like
 ```
 manual_annotation
 └── John
@@ -8,7 +8,6 @@ manual_annotation
     ├── kjv.csv
     ├── web.csv
     └── wmb.csv
-
 ```
 
 ## 2. Annotate
@@ -21,8 +20,8 @@ manual_annotation
 To each file, add a `sentiment` label to each row like this
 
 ```
-citation,verse,sentiment
-JHN.2.2,"And both Jesus was called, and his disciples, to the marriage.", 1
+chunk,start_citation,text,sentiment
+2556,1SA.17.50,"So David prevailed...", 1
 ```
 
 CLASSIFICATIONS\

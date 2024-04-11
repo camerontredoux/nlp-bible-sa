@@ -26,18 +26,18 @@ def tater_loop(df) -> DataFrame:
 
         # print progress and verse text
         print(f'\n{i+1}/{len(df)}')
-        print(row['verse'])
+        print(row['text'])
 
         # handle input
         while True:
             sentiment = input('\n1: neu, 2: pos, 3: neg, q: save and exit\nsentiment: ')
             match sentiment:
                 case 'q':
-                    print('saving and quitting')
+                    print('\nsaving and quitting')
                     return df
                 case '1' | '2' | '3':
                     df.at[i, 'sentiment'] = int(sentiment)
-                    print(f'labeled {row['citation']} as {sentiment}\n')
+                    print(f'labeled chunk {row['chunk']} as {sentiment}\n')
                     break
                 case _:
                     print('Invalid input')
