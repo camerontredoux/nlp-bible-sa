@@ -52,7 +52,9 @@ def annotate(name):
 
     # input bible name
     bibname = input("\nEnter bible to annotate (e.g. asv, q to quit): ")
-    if bibname == 'q': return
+    if bibname == 'q':
+        print('🫡')
+        return
 
     # read csv
     path = glob(f'*/{name}/{bibname}.csv')[0]
