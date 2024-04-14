@@ -3,7 +3,7 @@ from glob import glob
 from pandas import DataFrame, read_csv
 
 def print_progress(name):
-    csv_files = glob(f'*/{name}/*.csv')
+    csv_files = glob(f'**/{name}/*.csv')
 
     for f in csv_files:
         df = read_csv(f)
@@ -14,7 +14,7 @@ def print_progress(name):
             numLabaled = len(df[df['sentiment'].isin([1, 2, 3])])
 
         # print progress
-        print(f'{os.path.basename(f).split('.')[0]}: {numLabaled}/{len(df)}')
+        print(f'{os.path.basename(f).split(".")[0]}: {numLabaled}/{len(df)}')
     
 
 def tater_loop(df) -> DataFrame:
@@ -37,7 +37,7 @@ def tater_loop(df) -> DataFrame:
                     return df
                 case '1' | '2' | '3':
                     df.at[i, 'sentiment'] = int(sentiment)
-                    print(f'labeled chunk {row['chunk']} as {sentiment}\n')
+                    print(f'labeled chunk {row["chunk"]} as {sentiment}\n')
                     break
                 case _:
                     print('Invalid input')
@@ -57,7 +57,7 @@ def annotate(name):
         return
 
     # read csv
-    path = glob(f'*/{name}/{bibname}.csv')[0]
+    path = glob(f'**/{name}/{bibname}.csv')[0]
     df = read_csv(path)
 
     #add empty sentiment column
