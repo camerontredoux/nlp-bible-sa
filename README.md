@@ -165,7 +165,37 @@ In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible dat
 
 # Low Frequency Token Analysis
 
-# Contributors
+# Contributions
+
+**Project maintenence**
+
+!! EVERYONE LOOK AT THIS AND CORRECT IT
+!! I DON'T KNOW WHAT EVERYONE DID !!
+- Collect the data
+  - Olivia
+  - Cameron
+- Coordinate and analyze manual annotations
+  - Olivia
+- Run the model on the bibles
+  - Nick
+  - Cameron
+- Compare model to manual annotations (accuracy)
+  - Cameron
+  - Gerardo
+- Compare sentiment between characters
+  - Nick
+- Low frequency token analysis
+  - Gerardo
+  - River
+- Lead making the slides
+  - River
+  - Gerardo
+- Lead writing the README
+  - Olivia
+
+<br>
+
+**File authors**
 - [original api pipeline](data/bibles/old_api_pipeline/pipeline.ipynb) - Cameron
 - [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) - Olivia
 - [get_random_verses.ipynb](data/random_verses/get_random_verses.ipynb) - Cameron
