@@ -194,8 +194,31 @@ Ultimately, this ran fine, but we did run into a few runtime errors related to t
 All annotated translations were exported in csv format to be used by our analysis files later.
 
 # Model Accuracy
+In `annotation_analysis`
+
+In order to test the accuracy of our model, we were interested in comparing our manually annotated data to the annotations provided by our model. This process involved generating plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation. In order to discover any outlying annotation data that might be disrupting our accuracy score, we chose to use the mode as well as the average, comparing the results from both.
+
+From this plot, which utilizes the mode of our manual annotations as a baseline, we found that our model classified the `FBV` tranlation with the highest accuracy, of around 80%:
+![acc_mode](acc_mode.png)
+
+It is important to note that we (the students) may not know how to properly assess sentiment. I could be the case that the model is more accurate than us - As we see in the kappa scores, even us students could rarely agree on the sentiment for each verse
+
 
 # Translation Comparisons
+In `annotation_analysis`
+
+The overall goal of our project was to identify if there were any discrepancies in sentiment across different translations of the Bible. In order to do this, we performed a full sentiment classification for each translation, observing the distribution of neutral, positive and negative groups of text in each.
+
+In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we simply gather the sentiment labels for each translation calculating a relative percentage of each translation that falls under each. Following this, we decided to visualize this with two different plots.
+
+The first of these plots is interested in comparing individual sentiment scores across each translation:
+![bib_sent1](readme_plots/bib_sent1.png)
+
+The second plot is more interested in observing the distribution of sentiment within each translation:
+![bib_sent2](readme_plots/bib_sent2.png)
+
+**Overall, we found that the most neutral translation seems to be the `ASV`. The translation with the highest variance is the `FBV`, with the highest percentage of positive AND negative sentiment scores across all translations, also featuring a relatively low level of neutrality**
+
 
 # Sentiment by Character
 In `char_sent_analysis`
@@ -205,6 +228,8 @@ For this portion of our project, we were interested in finding whether or not di
 In [characters.ipynb](char_sent_analysis/characters.ipynb) we define a list of 100 characters that appear in most translations of the Bible. From here, using a helper function, `most_frequent_sentiment()`, to find the highest occuring sentiment related to mentions of a particular character, we iterate through each bible translation, gathering this information.
 
 Once we identify the overal sentiment related to each character, we find the average confidence score across all of those mentions with the corresponding sentiment label. Results from this step are exported as `char_analysis_confidence.csv`
+
+**Overall, we found that the `ASV` seems to portray characters with the most neutral sentiment, which coincides with our findings from the previous section**
 
 In order to identify possible discrepancies, we identified characters that were labeled with neutral, positive AND negative sentiment in one or more translations. Out of this list, we gathered the top 10 characters based on variance within the average confidence scores for each translation. Results from this step are exported as `top10conflict_confidence.csv`
 
@@ -223,8 +248,6 @@ The Low Frequency token Analysis is located in `low_freq.ipynb`. Make sure to do
 
 **Project maintenence**
 
-!! EVERYONE LOOK AT THIS AND CORRECT IT
-!! I DON'T KNOW WHAT EVERYONE DID IN THE END!!
 - Collect the data
   - Olivia
   - Cameron
