@@ -2,6 +2,13 @@
 
 This repo contains the source code for our analysis of 5 bible translations: American Standard Version (ASV), Free Bible Version (FBV), King James Version (KJV), World English Bible (WEB), World Messianic Bible (WMB).
 
+# Setup
+Note: you must have a Python environment and a way to run .ipynb files.
+
+1. clone the repo
+2. cd into it
+3. run
+```pip install -r requirements.txt```
 
 # Data
 
@@ -172,7 +179,7 @@ Low Frequency token Analysis located in `Low_freq.ipynb`. Make sure to download 
 **Project maintenence**
 
 !! EVERYONE LOOK AT THIS AND CORRECT IT
-!! I DON'T KNOW WHAT EVERYONE DID !!
+!! I DON'T KNOW WHAT EVERYONE DID IN THE END!!
 - Collect the data
   - Olivia
   - Cameron
@@ -193,6 +200,8 @@ Low Frequency token Analysis located in `Low_freq.ipynb`. Make sure to download 
   - River
   - Gerardo
 - Lead writing the README
+  - Olivia
+- Organize the repo/drive for deliverables
   - Olivia
 
 <br>
