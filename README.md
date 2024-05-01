@@ -187,18 +187,37 @@ Methodology is well documented there in [agreement.ipynb](annotation_analysis/ag
 # Model Annotation
 In `model_annotation/`
 
-In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data.
+In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data. Moving through each chunk (row of a particular translation's csv file), we parse the model's output to grab the sentiment score with the highest relative confidence score and the confidence score itself. Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs. 
+
+Ultimately, this ran fine, but we did run into a few runtime errors related to the length of text being input into our classifier. Tensorflow has a maximum input tensor size, and we found that a few lines in the WEB translation were causing issues. To remedy this, we implemented a try-except clause to handle these exceptions, annotating these lines with a sentiment score of "0" to filter them out from the rest of our data. Since we only encountered this problem with <10 chunks, we considered it to have a negligable impact on our overall analysis.
+
+All annotated translations were exported in csv format to be used by our analysis files later.
 
 # Model Accuracy
 
 # Translation Comparisons
 
 # Sentiment by Character
+In `char_sent_analysis`
+
+For this portion of our project, we were interested in finding whether or not different translations portray characters differently. By filtering our model-annotated data, we could isolate chunks of verses that explicitly mentioned certain characters. By examining the overal sentiment and related confidence scores for each character, we were able to identify some discrepancies across translations.
+
+In [characters.ipynb](char_sent_analysis/characters.ipynb) we define a list of 100 characters that appear in most translations of the Bible. From here, using a helper function, `most_frequent_sentiment()`, to find the highest occuring sentiment related to mentions of a particular character, we iterate through each bible translation, gathering this information.
+
+Once we identify the overal sentiment related to each character, we find the average confidence score across all of those mentions with the corresponding sentiment label. Results from this step are exported as `char_analysis_confidence.csv`
+
+In order to identify possible discrepancies, we identified characters that were labeled with neutral, positive AND negative sentiment in one or more translations. Out of this list, we gathered the top 10 characters based on variance within the average confidence scores for each translation. Results from this step are exported as `top10conflict_confidence.csv`
+
+Our results indicated that **Adam** was the most volatile character when it comes to sentiment across translations, with the following results:
+
+    name,asv sent,asv conf,fbv sent,fbv conf,web sent,web conf,wmb sent,wmb conf,kjv sent,kjv conf
+    Adam,Neutral (1),0.76,Negative (3),0.74,Positive (2),0.81,Negative (3),0.59,Neutral (1),0.74
+
 
 # Low Frequency Token Analysis
 We made a Low Frequency Token Analysis so as to assess our model's accuracy given the occurance of unusual tokens. Given that we could not obtain the tokens our model was trained on, we obtained the 200 least frequent words in each bible translation and compared the average confidence and sentiment averages with and without the bible verses that include these words. We included plots to visualise our results using matplotlib. We also included a csv that contains all the resulting metrics from this analysis, which are located in `Low_Freq_analysis/least_frequent_results.csv`. The metrics we used to assess our model's accuracy were neutral, postive, and negative averages, along with the average confidence. We used pandas for data manipulation and to remove the rows with the lowest frequency tokens. We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
 
-The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies.
+The Low Frequency token Analysis is located in `low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies.
 
 # Contributions
 
@@ -213,7 +232,6 @@ The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to do
   - Olivia
 - Run the model on the bibles
   - Nick
-  - Cameron
 - Compare model to manual annotations (accuracy)
   - Cameron
   - Gerardo
@@ -223,10 +241,10 @@ The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to do
   - Gerardo
   - River
 - Lead making the slides
-  - River
-  - Gerardo
+  - Everyone
 - Lead writing the README
   - Olivia
+  - Nick
 - Organize the repo/drive/requirements for deliverables
   - Olivia
 
@@ -240,8 +258,8 @@ The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to do
 - [anno_instructions.md](manual_annotation/anno_instructions.md) - Olivia
 - [anno.py](manual_annotation/anno.py) - Olivia
 - [agreement.ipynb](annotation_analysis/agreement.ipynb) - Olivia
-- [bible.ipynb](model_annotation/bible.ipynb)
+- [bible.ipynb](model_annotation/bible.ipynb) - Nick
 - [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb)
 - [positive_negative_analysis.ipynb](annotation_analysis/positive_negative_analysis.ipynb)
-- [characters.ipynb](data/character_chunks/characters.ipynb)
+- [characters.ipynb](data/character_chunks/characters.ipynb) - Nick
 - [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) - Gerardo
