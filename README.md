@@ -2,16 +2,35 @@
 
 This repo contains the source code for our analysis of 5 bible translations: American Standard Version (ASV), Free Bible Version (FBV), King James Version (KJV), World English Bible (WEB), World Messianic Bible (WMB).
 
+### Overview
+All files are generated into the folder their respective script is in.
+1. Data
+   1. In [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) we collect bible data from [API.Bible](https://scripture.api.bible/)
+   2. In [chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb) we chunk the verses in groups of 3
+   3. In [get_random_verses.ipynb](data/random_veres/get_random_verses.ipynb) we get random verses from each bible (not used. Chunks instesad.)
+   4. In [get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb) we get random chunks of verses from each bible to annotate (us and the model)
+2. Manual Annotation
+   1. In [manual_annotation](manual_annotation/anno_instructions.md) we manually annotate the random chunks
+   2. In [agreement.ipynb](annotation_analysis/agreement.ipynb) we compile labels from each annotator and calculate agreement with various metrics
+3. Model Annotation
+   1. In [bible.ipynb](model_annotation/bible.ipynb) we run our model on the bible data
+   2. In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we compare the model's sentiment to the manual annotations (accuracy)
+4. Model Accuracy
+5. Translation Comparisons
+6. Sentiment by Character
+7. Low Frequency Token Analysis
+
 # Setup
 Note: you must have a Python environment and a way to run .ipynb files.
 
-1. clone the repo
-2. cd into it
-3. run
-```pip install -r requirements.txt```
+1. Clone the repo and cd into it
+2. 
+    ```
+    pip install -r requirements.txt
+    ```
 
 # Data
-
+### Collecting the data
 Bible data is easy to come by, however we needed our data to be uniform across translations, which is not as easy. Our requirements led us to use https://scripture.api.bible/.
 
 API.Bible is an api that provides access to ~2500 bible translations in a uniform format.\
@@ -21,6 +40,7 @@ To collect the data we did the following:
 
 Here is a brief overview of the function that does the heavy lifting. The actual code is more robust with exceptions for failed requests so only actual verses are written to the csv, this is simplified for readability.
 
+> [data/bibles/api_pipeline.ipynb](data/bibles/api_pipeline.ipynb)
 ```python
 def pipeline(bibleID, bibleName):
 
@@ -57,23 +77,10 @@ def pipeline(bibleID, bibleName):
                 print(f"wrote: {verse}")
 ```
 
-# Manual Annotation
+### Chunking the Data
+For reasons we will discuss in the following section, it was benificial to chunk the verses into groups of 3.
 
-In order to evaluate our model's accuracy we need labeled data. Because we don't have access to sentiment labels for all of these bibles, we needed to do our own annotation.
-
-Initially we were going to annotate by verse, but we learned that bible verses are quite short (many just a sentence fragment), making them challenging to annotate alone.\
-Because of this we decided to annotate in chunks of 3 verses.
-
-We chose to anotate
-- 10 chunks of ASV, FBV, WEB, & WMB
-- 50 chunks of KJV
-
-We chose to do 50 of KJV instead of 10 like the others because we were particularly worried about the model's accuracy on the old style of english KJV uses. Looking back it would've been better to do 50 for all of the bibles; 10 was too few.
-
-Getting the chunks
----
-1. `data/bibles_chunked/`\
-Chunk the data into groups of 3 verses in [chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb)
+> [data/bibles_chunked/chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb)
    ```python
     def chunker(df: DataFrame) -> DataFrame:
         new_df = (
@@ -89,8 +96,25 @@ Chunk the data into groups of 3 verses in [chunk_verses.ipynb](data/bibles_chunk
         new_df.index.name = "chunk"
         return new_df
    ```
-2. `data/random_chunks/`\
-Get random chunks from each bible in [get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb)
+
+# Manual Annotation
+
+In order to evaluate our model's accuracy we need labeled data. Because we don't have access to sentiment labels for all of these bibles, we needed to do our own annotation.
+
+Initially we were going to annotate by verse, but we learned that bible verses are quite short (many just a sentence fragment), making them challenging to annotate alone.\
+Because of this we decided to annotate in chunks of 3 verses.
+
+We chose to anotate
+- 10 chunks of ASV, FBV, WEB, & WMB
+- 50 chunks of KJV
+
+We chose to do 50 of KJV instead of 10 like the others because we were particularly worried about the model's accuracy on the old style of english KJV uses. Looking back it would've been better to do 50 for all of the bibles; 10 was too few.
+
+Getting the random chunks
+---
+In `data/random_chunks/`\
+Get random chunks from each bible
+> [data/random_chunks/get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb)
    ```python
     # make csv with 10 random chunks for each modern bible
     for bible in ["asv.csv", "fbv.csv", "web.csv", "wmb.csv"]:
@@ -109,7 +133,8 @@ in `manual_annotation/`
 
 We each added a 'sentiment' column to each random chunk, either by manually typing the numbers or using the [anno.py](manual_annotation/anno.py) script.
 
-Each of us followed the instructions in [anno_instructions.md](manual_annotation/anno_instructions.md)
+Each of us followed the instructions in
+> [manual_annotation/anno_instructions.md](manual_annotation/anno_instructions.md)
 
 > ## 1. Copy the random verses
 > Make a copy of each csv file in `data/random_chunks` and put it in a folder named with your name like
@@ -202,7 +227,7 @@ The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to do
   - Gerardo
 - Lead writing the README
   - Olivia
-- Organize the repo/drive for deliverables
+- Organize the repo/drive/requirements for deliverables
   - Olivia
 
 <br>
