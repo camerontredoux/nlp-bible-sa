@@ -165,6 +165,8 @@ In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible dat
 
 # Low Frequency Token Analysis
 
+Low Frequency token Analysis located in `Low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies. Numerical results are located in `Low_Freq_analysis/least_frequent_results.csv`
+
 # Contributions
 
 **Project maintenence**
@@ -207,4 +209,4 @@ In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible dat
 - [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb)
 - [positive_negative_analysis.ipynb](annotation_analysis/positive_negative_analysis.ipynb)
 - [characters.ipynb](data/character_chunks/characters.ipynb)
-- [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb)
+- [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) - Gerardo
