@@ -171,8 +171,9 @@ In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible dat
 # Sentiment by Character
 
 # Low Frequency Token Analysis
+We made a Low Frequency Token Analysis so as to assess our model's accuracy given the occurance of unusual tokens. Given that we could not obtain the tokens our model was trained on, we obtained the 200 least frequent words in each bible translation and compared the average confidence and sentiment averages with and without the bible verses that include these words. We included plots to visualise our results using matplotlib. We also included a csv that contains all the resulting metrics from this analysis, which are located in `Low_Freq_analysis/least_frequent_results.csv`. The metrics we used to assess our model's accuracy were neutral, postive, and negative averages, along with the average confidence. We used pandas for data manipulation and to remove the rows with the lowest frequency tokens. We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
 
-Low Frequency token Analysis located in `Low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies. Numerical results are located in `Low_Freq_analysis/least_frequent_results.csv`
+The Low Frequency token Analysis is located in `Low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies.
 
 # Contributions
 
