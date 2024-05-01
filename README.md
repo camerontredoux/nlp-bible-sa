@@ -189,6 +189,16 @@ In `model_annotation/`
 
 In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data. Moving through each chunk (row of a particular translation's csv file), we parse the model's output to grab the sentiment score with the highest relative confidence score and the confidence score itself. Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs. 
 
+Model output:
+    [[{'label': 'negative', 'score': 0.8345967531204224},
+    {'label': 'neutral', 'score': 0.1521468460559845},
+    {'label': 'positive', 'score': 0.013256409205496311}]]
+
+Sample annotated csv:
+    chunk,start_citation,text,sentiment,confidence
+    0,GEN.1.1,"In the beginning God created...",1,0.5875061750411987
+    1,GEN.1.4,"And God saw the light, that it...",2,0.6193588972091675
+
 Ultimately, this ran fine, but we did run into a few runtime errors related to the length of text being input into our classifier. Tensorflow has a maximum input tensor size, and we found that a few lines in the WEB translation were causing issues. To remedy this, we implemented a try-except clause to handle these exceptions, annotating these lines with a sentiment score of "0" to filter them out from the rest of our data. Since we only encountered this problem with <10 chunks, we considered it to have a negligable impact on our overall analysis.
 
 All annotated translations were exported in csv format to be used by our analysis files later.
@@ -199,7 +209,7 @@ In `annotation_analysis`
 In order to test the accuracy of our model, we were interested in comparing our manually annotated data to the annotations provided by our model. This process involved generating plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation. In order to discover any outlying annotation data that might be disrupting our accuracy score, we chose to use the mode as well as the average, comparing the results from both.
 
 From this plot, which utilizes the mode of our manual annotations as a baseline, we found that our model classified the `FBV` tranlation with the highest accuracy, of around 80%:
-![acc_mode](acc_mode.png)
+![acc_mode](readme_plots/acc_mode.png)
 
 It is important to note that we (the students) may not know how to properly assess sentiment. I could be the case that the model is more accurate than us - As we see in the kappa scores, even us students could rarely agree on the sentiment for each verse
 
