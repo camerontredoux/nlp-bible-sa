@@ -1,0 +1,8 @@
+jmespath
+matplotlib
+pandas
+python-dotenv
+Requests
+scikit_learn
+transformers
+torch
