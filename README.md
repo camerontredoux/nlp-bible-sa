@@ -24,6 +24,19 @@ This repo contains the source code for our analysis of 5 bible translations: Ame
 7. [Low Frequency Token Analysis](#low-frequency-token-analysis)
    1. In [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) we analyze the model's accuracy with the least frequent tokens
 
+### Link to data:
+
+https://drive.google.com/drive/folders/1fpad5m010h4UXQhI0J7hEprQimdGIeXy?usp=sharing
+
+# Where to put data from Google Drive
+
+- All folders with student names (cameron, gerardo, nick, olivia, river) go into the `manual_annotation` folder
+- All csv's in the low_freq_analysis folder on Drive should go into the `Low_Freq_analysis` folder in the codebase
+- `data` folder on Drive should just be placed in the root folder of the codebase, at the same level as this README.md
+- `*_out.csv` files in the Drive should all go into `model_annotation`
+- `annotator_labels.csv` and `translation_agreement.csv` should go into `annotation_analysis` folder
+- `char_analysis_confidence.csv` and `top10conflict_confidence.csv` go into `char_sent_analysis` folder
+
 # Setup
 
 Note: you must have a Python environment and a way to run .ipynb files.
