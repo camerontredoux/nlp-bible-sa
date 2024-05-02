@@ -25,26 +25,30 @@ This repo contains the source code for our analysis of 5 bible translations: Ame
    1. In [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) we analyze the model's accuracy with the least frequent tokens
 
 # Setup
+
 Note: you must have a Python environment and a way to run .ipynb files.
 
 1. Clone the repo and cd into it
-2. 
-    ```
-    pip install -r requirements.txt
-    ```
+2. ```
+   pip install -r requirements.txt
+   ```
 
 # Data
+
 ### Collecting the data
+
 Bible data is easy to come by, however we needed our data to be uniform across translations, which is not as easy. Our requirements led us to use https://scripture.api.bible/.
 
 API.Bible is an api that provides access to ~2500 bible translations in a uniform format.\
 To collect the data we did the following:
+
 1. Make an API.Bible account to get a key
 2. Run [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) in `data/bibles/`
 
 Here is a brief overview of the function that does the heavy lifting. The actual code is more robust with exceptions for failed requests so only actual verses are written to the csv, this is simplified for readability.
 
 > [data/bibles/api_pipeline.ipynb](data/bibles/api_pipeline.ipynb)
+
 ```python
 def pipeline(bibleID, bibleName):
 
@@ -82,24 +86,26 @@ def pipeline(bibleID, bibleName):
 ```
 
 ### Chunking the Data
+
 For reasons we will discuss in the following section, it was benificial to chunk the verses into groups of 3.
 
 > [data/bibles_chunked/chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb)
-   ```python
-    def chunker(df: DataFrame) -> DataFrame:
-        new_df = (
-            # group by every 3 verses
-            df.groupby(df.index // 3)
-            # citiation: first cit. in group
-            # verse: join all verses
-            .agg({"citation": "first", "verse": " ".join})
-            # rename cols
-            .rename(columns={"citation": "start_citation", "verse": "text"})
-        )
-        # rename index
-        new_df.index.name = "chunk"
-        return new_df
-   ```
+
+```python
+ def chunker(df: DataFrame) -> DataFrame:
+     new_df = (
+         # group by every 3 verses
+         df.groupby(df.index // 3)
+         # citiation: first cit. in group
+         # verse: join all verses
+         .agg({"citation": "first", "verse": " ".join})
+         # rename cols
+         .rename(columns={"citation": "start_citation", "verse": "text"})
+     )
+     # rename index
+     new_df.index.name = "chunk"
+     return new_df
+```
 
 # Manual Annotation
 
@@ -109,39 +115,44 @@ Initially we were going to annotate by verse, but we learned that bible verses a
 Because of this we decided to annotate in chunks of 3 verses.
 
 We chose to anotate
+
 - 10 chunks of ASV, FBV, WEB, & WMB
 - 50 chunks of KJV
 
 We chose to do 50 of KJV instead of 10 like the others because we were particularly worried about the model's accuracy on the old style of english KJV uses. Looking back it would've been better to do 50 for all of the bibles; 10 was too few.
 
-Getting the random chunks
----
+## Getting the random chunks
+
 In `data/random_chunks/`\
 Get random chunks from each bible
+
 > [data/random_chunks/get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb)
-   ```python
-    # make csv with 10 random chunks for each modern bible
-    for bible in ["asv.csv", "fbv.csv", "web.csv", "wmb.csv"]:
-        df = pd.read_csv(f"../bibles_chunked/{bible}")
-        df.sample(10).to_csv(f"{bible}", index=False)
 
-    # 50 chunks for the KJV
-    df = pd.read_csv("../bibles_chunked/kjv.csv")
-    df.sample(50).to_csv("kjv.csv", index=False)
-   ```
+```python
+ # make csv with 10 random chunks for each modern bible
+ for bible in ["asv.csv", "fbv.csv", "web.csv", "wmb.csv"]:
+     df = pd.read_csv(f"../bibles_chunked/{bible}")
+     df.sample(10).to_csv(f"{bible}", index=False)
 
-   
-Annotating the chunks
----
+ # 50 chunks for the KJV
+ df = pd.read_csv("../bibles_chunked/kjv.csv")
+ df.sample(50).to_csv("kjv.csv", index=False)
+```
+
+## Annotating the chunks
+
 in `manual_annotation/`
 
 We each added a 'sentiment' column to each random chunk, either by manually typing the numbers or using the [anno.py](manual_annotation/anno.py) script.
 
 Each of us followed the instructions in
+
 > [manual_annotation/anno_instructions.md](manual_annotation/anno_instructions.md)
 
 > ## 1. Copy the random verses
+>
 > Make a copy of each csv file in `data/random_chunks` and put it in a folder named with your name like
+>
 > ```
 > manual_annotation
 > └── John
@@ -151,29 +162,31 @@ Each of us followed the instructions in
 >     ├── web.csv
 >     └── wmb.csv
 > ```
-> 
+>
 > ## 2. Annotate
+>
 > ### Option A - Use Olivia's script
+>
 > 1. Copy `./anno.py` into your folder with your csv files.
 > 2. Go to the main function and change it to your name
 > 3. Run the file
-> 
+>
 > ### Option B - Do it manually
+>
 > To each file, add a `sentiment` label to each row like this
-> 
+>
 > ```
 > chunk,start_citation,text,sentiment
 > 2556,1SA.17.50,"So David prevailed...", 1
 > ```
-> 
+>
 > CLASSIFICATIONS\
 > **1**: Neutral\
 > **2**: Positive\
 > **3**: Negative
 
+## Annotator agreement
 
-Annotator agreement
----
 in `annotation_analysis/`
 
 The annotated chunks are compiled into one file [annotator_labels.csv](annotation_analysis/annotator_labels.csv) using the script [agreement.ipynb](annotation_analysis/agreement.ipynb)\
@@ -187,15 +200,16 @@ The annotated chunks are compiled into one file [annotator_labels.csv](annotatio
 Then we calculate Fleiss' Kappa and a few other numbers and plot them.
 Methodology is well documented there in [agreement.ipynb](annotation_analysis/agreement.ipynb)
 
-
 # Model Annotation
+
 In `model_annotation/`
 
-In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data. 
+In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data.
 
 Moving through each chunk (row of a particular translation's csv file), we parse the model's output to grab the sentiment score with the highest relative confidence score and the confidence score itself.
 
 > [bible.ipynb](model_annotation/bible.ipynb)
+
 ```python
 classifier = pipeline(
     "text-classification",
@@ -206,7 +220,7 @@ classifier = pipeline(
 def process(row):
     '''parses model output to fill in sentiment/confidence scores for each row'''
 
-    # run model 
+    # run model
     text = row["text"]
     result = classifier(text)
 
@@ -237,7 +251,8 @@ def annotate(infile):
                 writer.writerow(process(row))
 ```
 
-Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs. 
+Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs.
+
 ```
 Model output:
     [[{'label': 'negative', 'score': 0.8345967531204224},
@@ -249,17 +264,19 @@ Sample annotated csv:
     0,GEN.1.1,"In the beginning God created...",1,0.5875061750411987
     1,GEN.1.4,"And God saw the light, that it...",2,0.6193588972091675
 ```
+
 Ultimately, this ran fine, but we did run into a few runtime errors related to the length of text being input into our classifier. Tensorflow has a maximum input tensor size, and we found that a few lines in the WEB translation were causing issues. To remedy this, we implemented a try-except clause to handle these exceptions, annotating these lines with a sentiment score of "0" to filter them out from the rest of our data. Since we only encountered this problem with <10 chunks, we considered it to have a negligable impact on our overall analysis.
 
-
 # Model Accuracy
+
 In `annotation_analysis`
 
 To test the accuracy of our model, we compared our manually annotated data to the model annotations.
 
-We generated plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation. 
+We generated plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation.
 
 > [accuracy.ipynb](annotation_analysis/accuracy.ipynb)
+
 ```python
 # model compared to mode of annotator labels
 df["annotator_sentiment_mode"] = df.iloc[:, 2:-1].apply(lambda x: x.mode()[0], axis=1)
@@ -294,8 +311,8 @@ From this plot, which utilizes the mode of our manual annotations as a baseline,
 
 It is important to note that our annotator agreement scores are fairly low -- as we see in the kappa scores -- and the amount of labeled samples we have are very low.
 
-
 # Translation Comparisons
+
 In `annotation_analysis`
 
 The overall goal of our project was to identify if there were any discrepancies in sentiment across different translations of the Bible.
@@ -317,18 +334,17 @@ for bible in bibles:
     total_sentiment[bible] = (sentiment_counts[2]) / (sentiment_counts[2] + sentiment_counts[3])
 ```
 
-
 One of of visualizations shows the percent of each classification per translation. See [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) for more.
 
 ![bib_sent2](readme_plots/bib_sent2.png)
 
 **Overall, we found that the most neutral translation seems to be the `ASV`. The translation with the highest variance is the `FBV`, with the highest percentage of positive AND negative sentiment scores across all translations, also featuring a relatively low level of neutrality**
 
-
 # Sentiment by Character
+
 In `char_sent_analysis`
 
-For this portion of our project, we were interested in finding whether or not different translations portray characters differently. 
+For this portion of our project, we were interested in finding whether or not different translations portray characters differently.
 
 By filtering our model-annotated data, we could isolate chunks of verses that explicitly mentioned certain characters.
 
@@ -362,7 +378,6 @@ for bible, path in bible_paths.items():
                 bible_sentiment_count[name][max_sentiment])
 ```
 
-
 **Overall, we found that the `ASV` seems to portray characters with the most neutral sentiment, which coincides with our findings from the previous section**
 
 In order to identify possible discrepancies, we identified characters that were labeled with neutral, positive AND negative sentiment in one or more translations. Out of this list, we gathered the top 10 characters based on variance within the average confidence scores for each translation. Results from this step are exported as `top10conflict_confidence.csv`
@@ -393,7 +408,6 @@ Our results indicated that **Adam** was the most volatile character when it come
     name,asv sent,asv conf,fbv sent,fbv conf,web sent,web conf,wmb sent,wmb conf,kjv sent,kjv conf
     Adam,Neutral (1),0.76,Negative (3),0.74,Positive (2),0.81,Negative (3),0.59,Neutral (1),0.74
 
-
 # Low Frequency Token Analysis
 
 In [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) we analyze the model's accuracy with the least frequent tokens.
@@ -417,9 +431,7 @@ def get_lowest_frequency(df, n=200):
 
 The metrics from this analysis were saved in [least_frequent_results.csv](Low_Freq_analysis/least_frequent_results.csv).
 
-
- We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
-
+We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
 
 # Contributions
 
@@ -445,10 +457,13 @@ The metrics from this analysis were saved in [least_frequent_results.csv](Low_Fr
 - Lead writing the README and organize the repo/drive/requirements for deliverables
   - Olivia
   - Nick
+- Maintaining repo
+  - Cameron
 
 <br>
 
 **File authors**
+
 - [original api pipeline](data/bibles/old_api_pipeline/pipeline.ipynb) - Cameron
 - [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) - Olivia
 - [get_random_verses.ipynb](data/random_verses/get_random_verses.ipynb) - Cameron
@@ -460,3 +475,5 @@ The metrics from this analysis were saved in [least_frequent_results.csv](Low_Fr
 - [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) - Gerardo, Nick
 - [characters.ipynb](char_sent_analysis/characters.ipynb) - Nick
 - [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) - Gerardo, River
+- [accuracy.ipynb](annotation_analysis/accuracy.ipynb) - Cameron
+- [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) - Cameron, Gerardo
