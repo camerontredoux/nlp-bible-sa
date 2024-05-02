@@ -7,7 +7,7 @@ This repo contains the source code for our analysis of 5 bible translations: Ame
 1. [Data](#data)
    1. In [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) we collect bible data from [API.Bible](https://scripture.api.bible/)
    2. In [chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb) we chunk the verses in groups of 3
-   3. In [get_random_verses.ipynb](data/random_veres/get_random_verses.ipynb) we get random verses from each bible (not used. Chunks instesad.)
+   3. In [get_random_verses.ipynb](data/random_verses/get_random_verses.ipynb) we get random verses from each bible (not used. Chunks instesad.)
    4. In [get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb) we get random chunks of verses from each bible to annotate (us and the model)
 2. [Manual Annotation](#manual-annotation)
    1. In [manual_annotation](manual_annotation/anno_instructions.md) we manually annotate the random chunks
