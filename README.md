@@ -3,22 +3,26 @@
 This repo contains the source code for our analysis of 5 bible translations: American Standard Version (ASV), Free Bible Version (FBV), King James Version (KJV), World English Bible (WEB), World Messianic Bible (WMB).
 
 ### Overview
-All files are generated into the folder their respective script is in.
-1. Data
+
+1. [Data](#data)
    1. In [api_pipeline.ipynb](data/bibles/api_pipeline.ipynb) we collect bible data from [API.Bible](https://scripture.api.bible/)
    2. In [chunk_verses.ipynb](data/bibles_chunked/chunk_verses.ipynb) we chunk the verses in groups of 3
    3. In [get_random_verses.ipynb](data/random_veres/get_random_verses.ipynb) we get random verses from each bible (not used. Chunks instesad.)
    4. In [get_random_chunks.ipynb](data/random_chunks/get_random_chunks.ipynb) we get random chunks of verses from each bible to annotate (us and the model)
-2. Manual Annotation
+2. [Manual Annotation](#manual-annotation)
    1. In [manual_annotation](manual_annotation/anno_instructions.md) we manually annotate the random chunks
-   2. In [agreement.ipynb](annotation_analysis/agreement.ipynb) we compile labels from each annotator and calculate agreement with various metrics
-3. Model Annotation
+   2. [anno.py](manual_annotation/anno.py) is a script to help with manual annotation
+   3. In [agreement.ipynb](annotation_analysis/agreement.ipynb) we compile labels from each annotator and calculate agreement with various metrics
+3. [Model Annotation](#model-annotation)
    1. In [bible.ipynb](model_annotation/bible.ipynb) we run our model on the bible data
-   2. In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we compare the model's sentiment to the manual annotations (accuracy)
-4. Model Accuracy
-5. Translation Comparisons
-6. Sentiment by Character
-7. Low Frequency Token Analysis
+4. [Model Accuracy](#model-accuracy)
+   1. In [accuracy.ipynb](annotation_analysis/accuracy.ipynb) we compare the model's sentiment to the manual annotations and plot
+5. [Translation Comparisons](#translation-comparisons)
+   1. In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we compare the sentiment distribution across translations
+6. [Sentiment by Character](#sentiment-by-character)
+   1. In [characters.ipynb](char_sent_analysis/characters.ipynb) we analyze the sentiment distribution by character
+7. [Low Frequency Token Analysis](#low-frequency-token-analysis)
+   1. In [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) we analyze the model's accuracy with the least frequent tokens
 
 # Setup
 Note: you must have a Python environment and a way to run .ipynb files.
@@ -187,8 +191,54 @@ Methodology is well documented there in [agreement.ipynb](annotation_analysis/ag
 # Model Annotation
 In `model_annotation/`
 
-In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data. Moving through each chunk (row of a particular translation's csv file), we parse the model's output to grab the sentiment score with the highest relative confidence score and the confidence score itself. Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs. 
+In [bible.ipynb](model_annotation/bible.ipynb) we run our model on our bible data. 
 
+Moving through each chunk (row of a particular translation's csv file), we parse the model's output to grab the sentiment score with the highest relative confidence score and the confidence score itself.
+
+> [bible.ipynb](model_annotation/bible.ipynb)
+```python
+classifier = pipeline(
+    "text-classification",
+    model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+    return_all_scores=False,
+)
+
+def process(row):
+    '''parses model output to fill in sentiment/confidence scores for each row'''
+
+    # run model 
+    text = row["text"]
+    result = classifier(text)
+
+    # parse result
+    sentiment = result[0]["label"]
+    confidence = result[0]["score"]
+    sentiment_value = label_to_sentiment(sentiment) # num to pos neg neu
+
+    return {
+        "chunk": row["chunk"],
+        "start_citation": row["start_citation"],
+        "text": text,
+        "sentiment": sentiment_value,
+        "confidence": confidence,
+    }
+
+def annotate(infile):
+    # read the verses
+    with open(infile, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        # open file to write to
+        with open(f"{infile[:-4]}_out.csv", mode='w', newline='', encoding='utf-8') as out_csv:
+            fields = ['chunk', 'start_citation', 'text', 'sentiment', 'confidence']
+            writer = csv.DictWriter(out_csv, fieldnames=fields)
+            writer.writeheader()
+            # run model on each verse and write to file
+            for row in reader:
+                writer.writerow(process(row))
+```
+
+Since we wanted our model annotations to be in the same format as our manual annotations, we generated similar columns in our output csvs. 
+```
 Model output:
     [[{'label': 'negative', 'score': 0.8345967531204224},
     {'label': 'neutral', 'score': 0.1521468460559845},
@@ -198,33 +248,78 @@ Sample annotated csv:
     chunk,start_citation,text,sentiment,confidence
     0,GEN.1.1,"In the beginning God created...",1,0.5875061750411987
     1,GEN.1.4,"And God saw the light, that it...",2,0.6193588972091675
-
+```
 Ultimately, this ran fine, but we did run into a few runtime errors related to the length of text being input into our classifier. Tensorflow has a maximum input tensor size, and we found that a few lines in the WEB translation were causing issues. To remedy this, we implemented a try-except clause to handle these exceptions, annotating these lines with a sentiment score of "0" to filter them out from the rest of our data. Since we only encountered this problem with <10 chunks, we considered it to have a negligable impact on our overall analysis.
 
-All annotated translations were exported in csv format to be used by our analysis files later.
 
 # Model Accuracy
 In `annotation_analysis`
 
-In order to test the accuracy of our model, we were interested in comparing our manually annotated data to the annotations provided by our model. This process involved generating plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation. In order to discover any outlying annotation data that might be disrupting our accuracy score, we chose to use the mode as well as the average, comparing the results from both.
+To test the accuracy of our model, we compared our manually annotated data to the model annotations.
+
+We generated plots to visualize sentiment distribution across translations and finding the similarity between each set of annotations for every translation. 
+
+> [accuracy.ipynb](annotation_analysis/accuracy.ipynb)
+```python
+# model compared to mode of annotator labels
+df["annotator_sentiment_mode"] = df.iloc[:, 2:-1].apply(lambda x: x.mode()[0], axis=1)
+accuracies_mode = []
+for bible in bibles:
+    accuracies_mode.append(
+        accuracy_score(
+            df[df["bible"] == bible]["bible_sentiment"],
+            df[df["bible"] == bible]["annotator_sentiment_mode"],
+        )
+    )
+
+# model compared to mean of annotator labels
+df["annotator_sentiment_avg"] = df.iloc[:, 2:-2].mean(axis=1).round().astype("int64")
+accuracies_mean = []
+for bible in bibles:
+    accuracies_mean.append(
+        accuracy_score(
+            df[df["bible"] == bible]["bible_sentiment"],
+            df[df["bible"] == bible]["annotator_sentiment_avg"],
+        )
+    )
+
+# accuracy for each annotator
+annotator_accuracies = []
+for annotator in df.columns[2:-3]:
+    annotator_accuracies.append(accuracy_score(df["bible_sentiment"], df[annotator]))
+```
 
 From this plot, which utilizes the mode of our manual annotations as a baseline, we found that our model classified the `FBV` tranlation with the highest accuracy, of around 80%:
 ![acc_mode](readme_plots/acc_mode.png)
 
-It is important to note that we (the students) may not know how to properly assess sentiment. I could be the case that the model is more accurate than us - As we see in the kappa scores, even us students could rarely agree on the sentiment for each verse
+It is important to note that our annotator agreement scores are fairly low -- as we see in the kappa scores -- and the amount of labeled samples we have are very low.
 
 
 # Translation Comparisons
 In `annotation_analysis`
 
-The overall goal of our project was to identify if there were any discrepancies in sentiment across different translations of the Bible. In order to do this, we performed a full sentiment classification for each translation, observing the distribution of neutral, positive and negative groups of text in each.
+The overall goal of our project was to identify if there were any discrepancies in sentiment across different translations of the Bible.
 
-In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we simply gather the sentiment labels for each translation calculating a relative percentage of each translation that falls under each. Following this, we decided to visualize this with two different plots.
+In [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) we analyze the sentiment distribution across each translation and compare them.
 
-The first of these plots is interested in comparing individual sentiment scores across each translation:
-![bib_sent1](readme_plots/bib_sent1.png)
+```python
+for bible in bibles:
+    bible_df = pd.read_csv(bibles[bible])
+    # Get the total count of each sentiment
+    sentiment_counts = bible_df["sentiment"].value_counts()
+    print(sentiment_counts)
 
-The second plot is more interested in observing the distribution of sentiment within each translation:
+    # percent distribution of each sentiment
+    bible_sentiments[bible]["positive"] = sentiment_counts[2] / sentiment_counts.sum()
+    bible_sentiments[bible]["negative"] = sentiment_counts[3] / sentiment_counts.sum()
+    bible_sentiments[bible]["neutral"] = sentiment_counts[1] / sentiment_counts.sum()
+
+    total_sentiment[bible] = (sentiment_counts[2]) / (sentiment_counts[2] + sentiment_counts[3])
+```
+
+
+One of of visualizations shows the percent of each classification per translation. See [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) for more.
+
 ![bib_sent2](readme_plots/bib_sent2.png)
 
 **Overall, we found that the most neutral translation seems to be the `ASV`. The translation with the highest variance is the `FBV`, with the highest percentage of positive AND negative sentiment scores across all translations, also featuring a relatively low level of neutrality**
@@ -233,15 +328,65 @@ The second plot is more interested in observing the distribution of sentiment wi
 # Sentiment by Character
 In `char_sent_analysis`
 
-For this portion of our project, we were interested in finding whether or not different translations portray characters differently. By filtering our model-annotated data, we could isolate chunks of verses that explicitly mentioned certain characters. By examining the overal sentiment and related confidence scores for each character, we were able to identify some discrepancies across translations.
+For this portion of our project, we were interested in finding whether or not different translations portray characters differently. 
 
-In [characters.ipynb](char_sent_analysis/characters.ipynb) we define a list of 100 characters that appear in most translations of the Bible. From here, using a helper function, `most_frequent_sentiment()`, to find the highest occuring sentiment related to mentions of a particular character, we iterate through each bible translation, gathering this information.
+By filtering our model-annotated data, we could isolate chunks of verses that explicitly mentioned certain characters.
 
-Once we identify the overal sentiment related to each character, we find the average confidence score across all of those mentions with the corresponding sentiment label. Results from this step are exported as `char_analysis_confidence.csv`
+In [characters.ipynb](char_sent_analysis/characters.ipynb) we filter our model-annotated data by character.
+
+First we define a list of 100 characters that appear in most translations of the Bible. We then find the most frequent sentiment and average confidence for verse chunks containing those characters.
+
+```python
+# init empty dict with character names as keys (set up framework for storing sentiment data)
+result_data = {name: {} for name in character_names}
+
+# finding most frequent sentiment AND average confidence for that sentiment for each character in each translation
+for bible, path in bible_paths.items():
+    df = pd.read_csv(path)
+    bible_sentiment_count = {name: {1: [], 2: [], 3: []} for name in character_names} # storing sentiment counts and confidence values here
+    for index, row in df.iterrows():
+        sentiment = int(row['sentiment'])
+        confidence = float(row['confidence'])
+        if sentiment in [1, 2, 3]:  # disregard the sentiments labeled as 0 from model annotations (runtime error with web.csv)
+            # iterate through all names, if the name appears in the row, append the confidence value to the character/sentiment pair
+            for name in character_names:
+                if name in row['text']:
+                    bible_sentiment_count[name][sentiment].append(confidence)
+    # find the most frequently occuring sentiment for each mention of a character and
+    # calculate average confidence for that sentiment score
+    for name in character_names:
+        max_sentiment = most_frequent_sentiment(bible_sentiment_count[name])
+        if max_sentiment is not None:
+            result_data[name][bible + ' sent'] = max_sentiment
+            result_data[name][bible + ' conf'] = sum(bible_sentiment_count[name][max_sentiment]) / len(
+                bible_sentiment_count[name][max_sentiment])
+```
+
 
 **Overall, we found that the `ASV` seems to portray characters with the most neutral sentiment, which coincides with our findings from the previous section**
 
 In order to identify possible discrepancies, we identified characters that were labeled with neutral, positive AND negative sentiment in one or more translations. Out of this list, we gathered the top 10 characters based on variance within the average confidence scores for each translation. Results from this step are exported as `top10conflict_confidence.csv`
+
+```python
+df = pd.read_csv('char_analysis_confidence.csv', index_col=0)
+df = df.dropna().replace('N/A', pd.NA)
+conflict_characters = []
+
+# check for if character has been labeled as neu, pos AND neg in one or more translations
+for index, row in df.iterrows():
+    unique_sentiments = row.nunique()
+    if unique_sentiments >= 3:
+        conflict_characters.append((index, unique_sentiments))
+
+# grab top 10 based on variance in confidence scores
+conflict_characters.sort(key=lambda x: x[1], reverse=True)
+top10 = conflict_characters[:10]
+
+# generate new df and export to csv for visualization
+conflicting_df = df.loc[[character[0] for character in top10]]
+conflicting_df.to_csv('top10conflict_confidence.csv')
+conflicting_df
+```
 
 Our results indicated that **Adam** was the most volatile character when it comes to sentiment across translations, with the following results:
 
@@ -250,9 +395,31 @@ Our results indicated that **Adam** was the most volatile character when it come
 
 
 # Low Frequency Token Analysis
-We made a Low Frequency Token Analysis so as to assess our model's accuracy given the occurance of unusual tokens. Given that we could not obtain the tokens our model was trained on, we obtained the 200 least frequent words in each bible translation and compared the average confidence and sentiment averages with and without the bible verses that include these words. We included plots to visualise our results using matplotlib. We also included a csv that contains all the resulting metrics from this analysis, which are located in `Low_Freq_analysis/least_frequent_results.csv`. The metrics we used to assess our model's accuracy were neutral, postive, and negative averages, along with the average confidence. We used pandas for data manipulation and to remove the rows with the lowest frequency tokens. We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
 
-The Low Frequency token Analysis is located in `low_freq.ipynb`. Make sure to download full `Low_Freq_analysis` folder and install all dependencies.
+In [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) we analyze the model's accuracy with the least frequent tokens.
+
+First we obtained the 200 least frequent words in each bible translation. We then compared the average confidence and sentiment with and without the bible verses that include these words.
+
+```python
+def get_lowest_frequency(df, n=200):
+    # gets the least frequent words from each text
+    frequency = {}
+    texts = df["text"]
+    for text in texts:
+        # removes unnecessary characters
+        words = re.sub(r'[^\w\s]', '', text.lower()).split()
+        for word in words:
+            if word in frequency:
+                frequency[word] += 1
+            else:
+                frequency[word] = 1
+```
+
+The metrics from this analysis were saved in [least_frequent_results.csv](Low_Freq_analysis/least_frequent_results.csv).
+
+
+ We found that there was no significant difference between the accuracy of the model with the least frequent tokens and without them.
+
 
 # Contributions
 
@@ -275,11 +442,9 @@ The Low Frequency token Analysis is located in `low_freq.ipynb`. Make sure to do
   - River
 - Lead making the slides
   - Everyone
-- Lead writing the README
+- Lead writing the README and organize the repo/drive/requirements for deliverables
   - Olivia
   - Nick
-- Organize the repo/drive/requirements for deliverables
-  - Olivia
 
 <br>
 
@@ -292,7 +457,6 @@ The Low Frequency token Analysis is located in `low_freq.ipynb`. Make sure to do
 - [anno.py](manual_annotation/anno.py) - Olivia
 - [agreement.ipynb](annotation_analysis/agreement.ipynb) - Olivia
 - [bible.ipynb](model_annotation/bible.ipynb) - Nick
-- [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb)
-- [positive_negative_analysis.ipynb](annotation_analysis/positive_negative_analysis.ipynb)
-- [characters.ipynb](data/character_chunks/characters.ipynb) - Nick
-- [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) - Gerardo
+- [bible_comparison.ipynb](annotation_analysis/bible_comparison.ipynb) - Gerardo, Nick
+- [characters.ipynb](char_sent_analysis/characters.ipynb) - Nick
+- [Low_freq.ipynb](Low_Freq_analysis/Low_freq.ipynb) - Gerardo, River
